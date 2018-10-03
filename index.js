@@ -43,6 +43,7 @@ const ScrollableTabView = createReactClass({
     scrollWithoutAnimation: PropTypes.bool,
     locked: PropTypes.bool,
     prerenderingSiblingsNumber: PropTypes.number,
+    disableScrollOnTab_iOS: PropTypes.string
   },
 
   getDefaultProps() {
@@ -56,6 +57,7 @@ const ScrollableTabView = createReactClass({
       scrollWithoutAnimation: false,
       locked: false,
       prerenderingSiblingsNumber: 0,
+      disableScrollOnTab_iOS: ''
     };
   },
 
@@ -104,6 +106,7 @@ const ScrollableTabView = createReactClass({
       offsetAndroid,
       containerWidth,
       sceneKeys: this.newSceneKeys({ currentPage: this.props.initialPage, }),
+      scrollEnableiOS: !this.props.locked
     };
   },
 
@@ -233,7 +236,7 @@ const ScrollableTabView = createReactClass({
         scrollEventThrottle={16}
         scrollsToTop={false}
         showsHorizontalScrollIndicator={false}
-        scrollEnabled={!this.props.locked}
+        scrollEnabled={this.state.scrollEnableiOS}
         directionalLockEnabled
         alwaysBounceVertical={false}
         keyboardDismissMode="on-drag"
@@ -305,6 +308,12 @@ const ScrollableTabView = createReactClass({
   },
 
   _onChangeTab(prevPage, currentPage) {
+    if (Platform.OS === 'ios' && this.props.locked === false) {
+      const targetTabName = this.props.disableScrollOnTab_iOS;
+      const flag = this._children()[currentPage] && this._children()[currentPage].props && this._children()[currentPage].props.tabLabel === targetTabName;
+      this.setState({scrollEnableiOS: !flag});
+    }
+
     this.props.onChangeTab({
       i: currentPage,
       ref: this._children()[currentPage],
@@ -332,7 +341,7 @@ const ScrollableTabView = createReactClass({
     if (!width || width <= 0 || Math.round(width) === Math.round(this.state.containerWidth)) {
       return;
     }
-    
+
     if (Platform.OS === 'ios') {
       const containerWidthAnimatedValue = new Animated.Value(width);
       // Need to call __makeNative manually to avoid a native animated bug. See
